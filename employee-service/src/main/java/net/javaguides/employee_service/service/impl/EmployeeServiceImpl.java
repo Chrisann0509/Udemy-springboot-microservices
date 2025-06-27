@@ -7,6 +7,7 @@ import net.javaguides.employee_service.entity.Employee;
 import net.javaguides.employee_service.exception.ResourceNotFoundException;
 import net.javaguides.employee_service.mapper.AutoEmployeeMapper;
 import net.javaguides.employee_service.repository.EmployeeRepository;
+import net.javaguides.employee_service.service.APIClient;
 import net.javaguides.employee_service.service.EmployeeService;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
@@ -19,12 +20,13 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final EmployeeRepository employeeRepository;
     private final ModelMapper modelMapper;
     //private final RestTemplate restTemplate;
-    private final WebClient webClient;
+    //private final WebClient webClient;
+    private final APIClient apiClient;
 
-    public EmployeeServiceImpl(EmployeeRepository employeeRepository, ModelMapper modelMapper, WebClient webClient) {
+    public EmployeeServiceImpl(EmployeeRepository employeeRepository, ModelMapper modelMapper, APIClient apiClient) {
         this.employeeRepository = employeeRepository;
         this.modelMapper = modelMapper;
-        this.webClient = webClient;
+        this.apiClient = apiClient;
     }
 
     @Override
@@ -54,17 +56,31 @@ public class EmployeeServiceImpl implements EmployeeService {
 //    }
 
     //    Microservice using WebClient
+//    @Override
+//    public APIResponseDto getEmployeeById(Long id) {
+//        Employee employee = employeeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Employee", "id", id));
+//        EmployeeDto employeeDto = modelMapper.map(employee, EmployeeDto.class);
+//        //EmployeeDto employeeDto = AutoEmployeeMapper.MAPPER.mapToEmployeeDto(employee);
+//
+//        DepartmentDto departmentDto = webClient.get()
+//                .uri("http://localhost:8080/api/departments/" + employee.getDepartmentCode())
+//                .retrieve()
+//                .bodyToMono(DepartmentDto.class)
+//                .block();
+//
+//        APIResponseDto apiResponseDto = new APIResponseDto();
+//        apiResponseDto.setEmployeeDto(employeeDto);
+//        apiResponseDto.setDepartmentDto(departmentDto);
+//        return apiResponseDto;
+//    }
+
     @Override
     public APIResponseDto getEmployeeById(Long id) {
         Employee employee = employeeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Employee", "id", id));
         EmployeeDto employeeDto = modelMapper.map(employee, EmployeeDto.class);
         //EmployeeDto employeeDto = AutoEmployeeMapper.MAPPER.mapToEmployeeDto(employee);
 
-        DepartmentDto departmentDto = webClient.get()
-                .uri("http://localhost:8080/api/departments/" + employee.getDepartmentCode())
-                .retrieve()
-                .bodyToMono(DepartmentDto.class)
-                .block();
+        DepartmentDto departmentDto = apiClient.getDepartmentByCode(employee.getDepartmentCode());
 
         APIResponseDto apiResponseDto = new APIResponseDto();
         apiResponseDto.setEmployeeDto(employeeDto);
