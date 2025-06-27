@@ -13,6 +13,11 @@ public class EmployeeServiceApplication {
         return new ModelMapper();
     }
 
+    @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
+    }
+
     public static void main(String[] args) {
         SpringApplication.run(EmployeeServiceApplication.class, args);
     }
