@@ -1,5 +1,6 @@
 package net.javaguides.employee_service.service.impl;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import net.javaguides.employee_service.dto.APIResponseDto;
 import net.javaguides.employee_service.dto.DepartmentDto;
 import net.javaguides.employee_service.dto.EmployeeDto;
@@ -20,12 +21,13 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final EmployeeRepository employeeRepository;
     private final ModelMapper modelMapper;
     //private final RestTemplate restTemplate;
-    //private final WebClient webClient;
+    private final WebClient webClient;
     private final APIClient apiClient;
 
-    public EmployeeServiceImpl(EmployeeRepository employeeRepository, ModelMapper modelMapper, APIClient apiClient) {
+    public EmployeeServiceImpl(EmployeeRepository employeeRepository, ModelMapper modelMapper, WebClient webClient, APIClient apiClient) {
         this.employeeRepository = employeeRepository;
         this.modelMapper = modelMapper;
+        this.webClient = webClient;
         this.apiClient = apiClient;
     }
 
@@ -56,35 +58,37 @@ public class EmployeeServiceImpl implements EmployeeService {
 //    }
 
     //    Microservice using WebClient
-//    @Override
-//    public APIResponseDto getEmployeeById(Long id) {
-//        Employee employee = employeeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Employee", "id", id));
-//        EmployeeDto employeeDto = modelMapper.map(employee, EmployeeDto.class);
-//        //EmployeeDto employeeDto = AutoEmployeeMapper.MAPPER.mapToEmployeeDto(employee);
-//
-//        DepartmentDto departmentDto = webClient.get()
-//                .uri("http://localhost:8080/api/departments/" + employee.getDepartmentCode())
-//                .retrieve()
-//                .bodyToMono(DepartmentDto.class)
-//                .block();
-//
-//        APIResponseDto apiResponseDto = new APIResponseDto();
-//        apiResponseDto.setEmployeeDto(employeeDto);
-//        apiResponseDto.setDepartmentDto(departmentDto);
-//        return apiResponseDto;
-//    }
-
+    @CircuitBreaker(name = "${spring.application.name}", fallbackMethod = "getDefaultDepartment")
     @Override
     public APIResponseDto getEmployeeById(Long id) {
         Employee employee = employeeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Employee", "id", id));
         EmployeeDto employeeDto = modelMapper.map(employee, EmployeeDto.class);
         //EmployeeDto employeeDto = AutoEmployeeMapper.MAPPER.mapToEmployeeDto(employee);
 
-        DepartmentDto departmentDto = apiClient.getDepartmentByCode(employee.getDepartmentCode());
+        DepartmentDto departmentDto = webClient.get()
+                .uri("http://localhost:8080/api/departments/" + employee.getDepartmentCode())
+                .retrieve()
+                .bodyToMono(DepartmentDto.class)
+                .block();
 
         APIResponseDto apiResponseDto = new APIResponseDto();
         apiResponseDto.setEmployeeDto(employeeDto);
         apiResponseDto.setDepartmentDto(departmentDto);
         return apiResponseDto;
     }
+
+    //    Microservice using OpenFeign
+//    @Override
+//    public APIResponseDto getEmployeeById(Long id) {
+//        Employee employee = employeeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Employee", "id", id));
+//        EmployeeDto employeeDto = modelMapper.map(employee, EmployeeDto.class);
+//        //EmployeeDto employeeDto = AutoEmployeeMapper.MAPPER.mapToEmployeeDto(employee);
+//
+//        DepartmentDto departmentDto = apiClient.getDepartmentByCode(employee.getDepartmentCode());
+//
+//        APIResponseDto apiResponseDto = new APIResponseDto();
+//        apiResponseDto.setEmployeeDto(employeeDto);
+//        apiResponseDto.setDepartmentDto(departmentDto);
+//        return apiResponseDto;
+//    }
 }
