@@ -1,6 +1,7 @@
 package net.javaguides.employee_service.service.impl;
 
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import net.javaguides.employee_service.dto.APIResponseDto;
 import net.javaguides.employee_service.dto.DepartmentDto;
 import net.javaguides.employee_service.dto.EmployeeDto;
@@ -11,6 +12,8 @@ import net.javaguides.employee_service.repository.EmployeeRepository;
 import net.javaguides.employee_service.service.APIClient;
 import net.javaguides.employee_service.service.EmployeeService;
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -23,6 +26,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     //private final RestTemplate restTemplate;
     private final WebClient webClient;
     private final APIClient apiClient;
+    private static Logger LOGGER = LoggerFactory.getLogger(EmployeeServiceImpl.class);
 
     public EmployeeServiceImpl(EmployeeRepository employeeRepository, ModelMapper modelMapper, WebClient webClient, APIClient apiClient) {
         this.employeeRepository = employeeRepository;
@@ -58,9 +62,11 @@ public class EmployeeServiceImpl implements EmployeeService {
 //    }
 
     //    Microservice using WebClient
-    @CircuitBreaker(name = "${spring.application.name}", fallbackMethod = "getDefaultDepartment")
+    //@CircuitBreaker(name = "${spring.application.name}", fallbackMethod = "getDefaultDepartment")
+    @Retry(name = "${spring.application.name}", fallbackMethod = "getDefaultDepartment")
     @Override
     public APIResponseDto getEmployeeById(Long id) {
+        LOGGER.info("inside getEmployeeById() method");
         Employee employee = employeeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Employee", "id", id));
         EmployeeDto employeeDto = modelMapper.map(employee, EmployeeDto.class);
         //EmployeeDto employeeDto = AutoEmployeeMapper.MAPPER.mapToEmployeeDto(employee);
@@ -93,6 +99,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 //    }
 
     public APIResponseDto getDefaultDepartment(Long employeeId, Exception exception) {
+        LOGGER.info("inside getDefaultDepartment() method");
         Employee employee = employeeRepository.findById(employeeId).get();
         EmployeeDto employeeDto = modelMapper.map(employee, EmployeeDto.class);
         //EmployeeDto employeeDto = AutoEmployeeMapper.MAPPER.mapToEmployeeDto(employee);
