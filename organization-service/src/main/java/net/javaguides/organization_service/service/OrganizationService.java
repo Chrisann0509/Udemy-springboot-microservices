@@ -4,4 +4,5 @@ import net.javaguides.organization_service.dto.OrganizationDto;
 
 public interface OrganizationService {
     OrganizationDto saveOrganization(OrganizationDto organizationDto);
+    OrganizationDto findByOrganizationCode(String organizationCode);
 }
