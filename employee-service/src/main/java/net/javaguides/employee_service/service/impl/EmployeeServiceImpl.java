@@ -5,6 +5,7 @@ import io.github.resilience4j.retry.annotation.Retry;
 import net.javaguides.employee_service.dto.APIResponseDto;
 import net.javaguides.employee_service.dto.DepartmentDto;
 import net.javaguides.employee_service.dto.EmployeeDto;
+import net.javaguides.employee_service.dto.OrganizationDto;
 import net.javaguides.employee_service.entity.Employee;
 import net.javaguides.employee_service.exception.ResourceNotFoundException;
 import net.javaguides.employee_service.mapper.AutoEmployeeMapper;
@@ -77,9 +78,16 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .bodyToMono(DepartmentDto.class)
                 .block();
 
+        OrganizationDto organizationDto = webClient.get()
+                .uri("http://localhost:8083/api/organizations/" + employee.getOrganizationCode())
+                .retrieve()
+                .bodyToMono(OrganizationDto.class)
+                .block();
+
         APIResponseDto apiResponseDto = new APIResponseDto();
         apiResponseDto.setEmployeeDto(employeeDto);
         apiResponseDto.setDepartmentDto(departmentDto);
+        apiResponseDto.setOrganizationDto(organizationDto);
         return apiResponseDto;
     }
 
